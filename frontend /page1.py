@@ -147,7 +147,7 @@ with st.form("investor_profile_form"):
                 "income": float(income),
                 "roi_percent": float(roi_percent),
                 "objective": objective.strip() if objective.strip() else "Not specified",
-                "holdings": List[holdings],
+                "holdings": [holding.strip() for holding in holdings.split(",") if holding.strip()],
             }
         }
         st.success("Profile saved successfully")
