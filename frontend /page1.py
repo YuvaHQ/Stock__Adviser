@@ -98,6 +98,9 @@ st.markdown(
     .portfolio-row:last-child { border-bottom:0; }
     .metric-label { color:#8295af; font-size:.73rem; text-transform:uppercase; letter-spacing:.08em; }
     .metric-value { color:#eaf2fd; font-size:1.05rem; font-weight:700; }
+    .input-card { background: linear-gradient(135deg, rgba(20,40,68,0.96), rgba(12,21,33,0.96)); border: 1px solid #314d76; border-radius: 18px; padding: 1rem 1.1rem; margin: 1rem 0 1.2rem; }
+    .input-card .title { font-size: 1.35rem; font-weight: 750; letter-spacing: -.03em; color: #eef5ff; margin-bottom: .2rem; }
+    .input-card .subtitle { color:#9db0c9; font-size:.87rem; }
     div[data-testid="stSelectbox"] label { color:#aebed2 !important; font-size:.78rem !important; font-weight:700 !important; text-transform:uppercase; letter-spacing:.08em; }
     .stButton button { border-radius:9px; border:1px solid #38557a; background:#142844; color:#e4efff; font-weight:650; }
     </style>
@@ -108,8 +111,6 @@ st.markdown(
 
 payload = preview_payload()  # TODO(member 5): Replace with integrated session payload.
 market = payload["market"]
-profile = st.selectbox("Investor risk profile", ["Conservative", "Moderate", "Aggressive"], index=1)
-
 title_col, status_col = st.columns([4, 1])
 with title_col:
     st.markdown('<div class="eyebrow">Decision intelligence workspace</div><div class="app-title">Astra Finance</div><div class="subtle">Grounded signals, transparent agent summaries, profile-aware recommendations.</div>', unsafe_allow_html=True)
@@ -118,6 +119,39 @@ with status_col:
     state = "API ONLINE" if payload["system"]["api_online"] else "BACKUP MODE"
     st.markdown(pill(state, "positive" if payload["system"]["api_online"] else "caution"), unsafe_allow_html=True)
     st.caption(payload["system"]["notice"])
+
+st.markdown(
+    '''
+    <div class="input-card">
+        <div class="title">Investor Profile Capture</div>
+        <div class="subtitle">Build a smart profile with all the essentials in one place.</div>
+    </div>
+    ''',
+    unsafe_allow_html=True,
+)
+
+with st.form("investor_profile_form"):
+    name = st.text_input("Name", placeholder="Enter name")
+    age = st.number_input("Age", min_value=0, max_value=120, value=30, step=1)
+    income = st.number_input("Income", min_value=0.0, step=1000.0, format="%.2f")
+    roi_percent = st.number_input("ROI Percent", min_value=-100.0, max_value=1000.0, value=0.0, step=0.1, format="%.2f")
+    objective = st.text_input("Objective", placeholder="e.g. Wealth creation")
+    holdings = st.text_input("Holdings", placeholder="e.g. 5 stocks, 2 ETFs, 1 Bond")
+
+    submitted = st.form_submit_button("Save Investor Profile", use_container_width=True)
+
+    if submitted:
+        final_payload = {
+            name.strip() if name.strip() else "Unknown": {
+                "age": int(age),
+                "income": float(income),
+                "roi_percent": float(roi_percent),
+                "objective": objective.strip() if objective.strip() else "Not specified",
+                "holdings": int(holdings),
+            }
+        }
+        st.success("Profile saved successfully")
+        st.json(final_payload)
 
 st.divider()
 left, center, right = st.columns([1.03, 1.38, 1.12], gap="large")
@@ -147,14 +181,11 @@ with right:
     st.markdown(f'<div class="panel">{portfolio_html}</div>', unsafe_allow_html=True)
 
 st.divider()
-metric_a, metric_b, metric_c, action_col = st.columns([1, 1, 1, 1.45])
+metric_a, metric_b, metric_c = st.columns([1, 1, 1])
 with metric_a:
-    st.markdown('<div class="metric-label">Active profile</div><div class="metric-value">' + profile + '</div>', unsafe_allow_html=True)
+    st.markdown('<div class="metric-label">Investor</div><div class="metric-value">Profile form</div>', unsafe_allow_html=True)
 with metric_b:
     latency = payload["system"]["latency_s"]
     st.markdown(f'<div class="metric-label">Response latency</div><div class="metric-value">{latency:.1f}s</div>', unsafe_allow_html=True)
 with metric_c:
     st.markdown(f'<div class="metric-label">Last refreshed</div><div class="metric-value">{datetime.now().strftime("%H:%M")}</div>', unsafe_allow_html=True)
-with action_col:
-    if st.button("Simulate API offline", use_container_width=True):
-        st.warning("Backup mode: showing the last verified snapshot. No new market data was requested.")
